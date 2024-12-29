@@ -212,14 +212,17 @@ export default function Home() {
     setIsLoading(true);
   
     try {
-      const response = await fetch('/suggest', {
+      const response = await fetch('http://105.102.16.36:5000/suggest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' },
+        
         body: JSON.stringify({
-          text: text,
-          genres: selectedGenres
+          Text: text,
+          // genres: selectedGenres
         }),
       });
+
+      console.log(response)
       
       if (!response.ok) {
         throw new Error('Server response was not ok');
