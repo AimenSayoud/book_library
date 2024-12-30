@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, BookOpen, Upload, ChevronDown, ChevronUp, Search, History, X, Filter, FileDown , Trash2} from 'lucide-react'
+import { 
+  BookOpen, Upload, ChevronDown, ChevronUp, Search, 
+  History, X, Filter, FileDown, Trash2, Calendar,
+  Users, Tag, Star
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,18 +27,54 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
+interface Book {
+  id: number
+  title: string
+  issued: string
+  authors: string[]
+  subjects: string[]
+  cover_url: string
+}
 
 interface Message {
   id: number
   text: string
   sender: 'user' | 'bot'
   timestamp: Date
-  books?: { title: string; imageUrl: string; genre?: string; rating?: number }[]
+  books?: Book[]
 }
 
 const MAX_LINES = 3
 const MAX_INITIAL_BOOKS = 5
 const MAX_SEARCH_HISTORY = 10
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100 }
+  }
+}
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -46,12 +86,17 @@ export default function Home() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const apiCallMadeRef = useRef(false)
   const { toast } = useToast()
 
   const genres = [
     "Fiction", "Non-Fiction", "Mystery", "Science Fiction",
     "Romance", "Fantasy", "Biography", "History"
   ]
+
+  useEffect(() => {
+    apiCallMadeRef.current = false
+  }, [input])
 
   useEffect(() => {
     scrollToBottom()
@@ -98,198 +143,70 @@ export default function Home() {
     })
   }
 
-  // Add this new function inside the Home component
   const clearAllHistory = () => {
-    // Clear messages and search history
-    setMessages([]);
-    setSearchHistory([]);
-    // Reset any expanded states
-    setExpandedMessages(new Set());
-    setExpandedBookLists(new Set());
-    // Show toast notification
+    setMessages([])
+    setSearchHistory([])
+    setExpandedMessages(new Set())
+    setExpandedBookLists(new Set())
     toast({
       title: "History cleared",
       description: "All search history and messages have been cleared.",
-    });
-  };
-
-
-  interface Book {
-    id: number
-    title: string
-    issued: string  // Changed from issued
-    authors: string[]
-    subjects: string[]
-    cover_url: string
-}
-  
-  interface Message {
-    id: number
-    text: string
-    sender: 'user' | 'bot'
-    timestamp: Date
-    books?: Book[]
+    })
   }
-  
-  // Dummy data for fallback
-  const dummyBooks: Book[] = [
-    {
-      id: 1,
-      title: "The Great Gatsby",
-      issued: "1925-04-10",
-      authors: ["F. Scott Fitzgerald"],
-      subjects: ["Fiction", "Classical Literature", "American Literature"],
-      cover_url: "https://covers.openlibrary.org/b/id/12000-L.jpg"
-    },
-    {
-      id: 2,
-      title: "1984",
-      issued: "1949-06-08",
-      authors: ["George Orwell"],
-      subjects: ["Science Fiction", "Dystopian", "Political Fiction"],
-      cover_url: "https://covers.openlibrary.org/b/id/12001-L.jpg"
-    },
-    {
-      id: 3,
-      title: "Pride and Prejudice",
-      issued: "1813-01-28",
-      authors: ["Jane Austen"],
-      subjects: ["Romance", "Classic Literature", "Social Commentary"],
-      cover_url: "https://covers.openlibrary.org/b/id/12002-L.jpg"
-    },
-    {
-      id: 4,
-      title: "The Hobbit",
-      issued: "1937-09-21",
-      authors: ["J.R.R. Tolkien"],
-      subjects: ["Fantasy", "Adventure", "Children's Literature"],
-      cover_url: "https://covers.openlibrary.org/b/id/12003-L.jpg"
-    },
-    {
-      id: 5,
-      title: "To Kill a Mockingbird",
-      issued: "1960-07-11",
-      authors: ["Harper Lee"],
-      subjects: ["Fiction", "Legal Story", "Southern Literature"],
-      cover_url: "https://covers.openlibrary.org/b/id/12004-L.jpg"
-    },
-    {
-      id: 6,
-      title: "The Catcher in the Rye",
-      issued: "1951-07-16",
-      authors: ["J.D. Salinger"],
-      subjects: ["Fiction", "Coming of Age", "Literary Fiction"],
-      cover_url: "https://covers.openlibrary.org/b/id/12005-L.jpg"
-    },
-    {
-      id: 7,
-      title: "Lord of the Rings",
-      issued: "1954-07-29",
-      authors: ["J.R.R. Tolkien"],
-      subjects: ["Fantasy", "Epic", "Adventure"],
-      cover_url: "https://covers.openlibrary.org/b/id/12006-L.jpg"
-    },
-    {
-      id: 8,
-      title: "Brave New World",
-      issued: "1932-01-01",
-      authors: ["Aldous Huxley"],
-      subjects: ["Science Fiction", "Dystopian", "Classics"],
-      cover_url: "https://covers.openlibrary.org/b/id/12007-L.jpg"
-    }
-  ];
-  
+
   const processInput = async (text: string) => {
+    if (apiCallMadeRef.current) return
+    apiCallMadeRef.current = true
+
     const userMessage: Message = {
       id: Date.now(),
       text: text,
       sender: 'user',
       timestamp: new Date()
-    };
-    setMessages(prev => [...prev, userMessage]);
-    addToSearchHistory(text);
-    setInput('');
-    setIsLoading(true);
-  
+    }
+    setMessages(prev => [...prev, userMessage])
+    addToSearchHistory(text)
+    setInput('')
+    setIsLoading(true)
+
     try {
       const response = await fetch('http://105.102.16.36:5000/suggest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' },
-        
-        body: JSON.stringify({
-          Text: text,
-          // genres: selectedGenres
-        }),
-      });
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Methods': '*'
+        },
+        body: JSON.stringify({ Text: text }),
+      })
 
-      
-      if (!response.ok) { 
-        throw new Error('Server response was not ok');
+      if (!response.ok) {
+        throw new Error('Server response was not ok')
       }
-  
-      const data: Book[] = await response.json();
 
-      console.log(data);
-      
+      const data: Book[] = await response.json()
+      const booksArray = Array.isArray(data) ? data : [data]
+
       const botMessage: Message = {
         id: Date.now(),
         text: 'Here are some book recommendations based on your description:',
         sender: 'bot',
         timestamp: new Date(),
-        books: data
-      };
-      setMessages(prev => [...prev, botMessage]);
+        books: booksArray
+      }
+      setMessages(prev => [...prev, botMessage])
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      
-      // Filter dummy books based on selected genres and search text
-      let filteredBooks = dummyBooks;
-      
-      if (selectedGenres.length > 0) {
-        filteredBooks = dummyBooks.filter(book => 
-          book.subjects.some(subject => 
-            selectedGenres.some(genre => 
-              subject.toLowerCase().includes(genre.toLowerCase())
-            )
-          )
-        );
-      }
-  
-      // Further filter by search text if present
-      if (text.trim()) {
-        const searchTerms = text.toLowerCase().split(' ');
-        filteredBooks = filteredBooks.filter(book =>
-          searchTerms.some(term =>
-            book.title.toLowerCase().includes(term) ||
-            book.subjects.some(subject => subject.toLowerCase().includes(term)) ||
-            book.authors.some(author => author.toLowerCase().includes(term))
-          )
-        );
-      }
-  
-      // Ensure we have at least some results
-      if (filteredBooks.length === 0) {
-        filteredBooks = dummyBooks.slice(0, 3);
-      }
-  
-      const botMessage: Message = {
-        id: Date.now(),
-        text: 'Here are some book recommendations that might interest you:',
-        sender: 'bot',
-        timestamp: new Date(),
-        books: filteredBooks
-      };
-      setMessages(prev => [...prev, botMessage]);
-      
+      console.error('Error fetching recommendations:', error)
       toast({
-        title: "Using offline recommendations",
-        description: "Couldn't connect to the server. Showing available recommendations instead.",
-        variant: "default",
-      });
+        title: "Error",
+        description: "Failed to fetch recommendations. Please try again.",
+        variant: "destructive",
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const toggleMessageExpansion = (messageId: number) => {
     setExpandedMessages(prev => {
@@ -315,30 +232,14 @@ export default function Home() {
     })
   }
 
-  const isMessageExpanded = (messageId: number) => {
-    return expandedMessages.has(messageId)
-  }
-
-  const isBookListExpanded = (messageId: number) => {
-    return expandedBookLists.has(messageId)
-  }
-
-  const shouldTruncate = (text: string) => {
-    const lineCount = text.split('\n').length
-    return lineCount > MAX_LINES
-  }
-
-  const truncateText = (text: string) => {
-    const lines = text.split('\n')
-    if (lines.length > MAX_LINES) {
-      return lines.slice(0, MAX_LINES).join('\n')
-    }
-    return text
-  }
+  const isMessageExpanded = (messageId: number) => expandedMessages.has(messageId)
+  const isBookListExpanded = (messageId: number) => expandedBookLists.has(messageId)
 
   const MessageContent = ({ message }: { message: Message }) => {
     const isExpanded = isMessageExpanded(message.id)
-    const needsTruncation = shouldTruncate(message.text)
+    const lines = message.text.split('\n')
+    const needsTruncation = lines.length > MAX_LINES
+    const displayText = isExpanded ? message.text : lines.slice(0, MAX_LINES).join('\n')
     
     return (
       <div className="relative">
@@ -346,7 +247,7 @@ export default function Home() {
           {message.timestamp.toLocaleTimeString()}
         </div>
         <div className={`whitespace-pre-wrap ${!isExpanded && needsTruncation ? 'max-h-[72px] overflow-hidden' : ''}`}>
-          {isExpanded || !needsTruncation ? message.text : truncateText(message.text)}
+          {displayText}
         </div>
         {needsTruncation && (
           <Button
@@ -367,7 +268,7 @@ export default function Home() {
   }
 
   const BookList = ({ message }: { message: Message }) => {
-    if (!message.books) return null
+    if (!message.books || message.books.length === 0) return null
     
     const isExpanded = isBookListExpanded(message.id)
     const hasMoreBooks = message.books.length > MAX_INITIAL_BOOKS
@@ -376,51 +277,87 @@ export default function Home() {
     return (
       <motion.div 
         className="flex flex-col items-center gap-4 mt-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
-        <div className="flex flex-wrap gap-6 justify-center">
-        <AnimatePresence>
-  {displayedBooks.map((book, index) => (
-    <motion.div 
-      key={index}
-      className="w-[180px] bg-card rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.1 + index * 0.1, duration: 0.3 }}
-    >
-      <div className="relative aspect-[2/3] w-full">
-        <Image 
-          src={book.cover_url} 
-          alt={book.title} 
-          fill
-          className="object-cover rounded-t-lg"
-          priority
-        />
-        {book.issued && (
-          <span className="absolute top-3 right-3 bg-white/90 text-black text-xs px-3 py-1 rounded-full shadow-sm">
-            {book.issued}
-          </span>
-        )}
-      </div>
-      
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-3 line-clamp-2">
-          {book.title}
-        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <AnimatePresence mode="wait">
+            {displayedBooks.map((book, index) => (
+              <motion.div
+                key={book.id || index}
+                variants={itemVariants}
+                layout
+                className="group"
+              >
+                <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg">
+                  <div className="relative aspect-[2/3] w-full">
+                    <Image 
+                      src={book.cover_url} 
+                      alt={book.title}
+                      // height={250}
+                      // width={166}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                      {book.title}
+                    </h3>
+                    <div className="space-y-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              <span>{book.issued}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Publication Date</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-       
-      </div>
-    </motion.div>
-  ))}
-</AnimatePresence>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Users className="h-4 w-4" />
+                              <span className="line-clamp-1">{book.authors.join(', ')}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Authors</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <div className="flex flex-wrap gap-1">
+                        {book.subjects.slice(0, 3).map((subject, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
+                          >
+                            {subject}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
         {hasMoreBooks && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="mt-2"
+            className="mt-4"
             onClick={() => toggleBookListExpansion(message.id)}
           >
             {isExpanded ? (
@@ -436,64 +373,63 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen p-4 bg-background">
-      {/* Header with Filters */}
-      {/* Header with Filters */}
-<div className="w-full max-w-2xl mx-auto mb-4">
-  <div className="flex items-center justify-between">
-    <h1 className="text-2xl font-bold">Book Discovery</h1>
-    
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={clearAllHistory}
-        className="flex items-center gap-2"
-      >
-        <Trash2 className="h-4 w-4" />
-        Clear History
-      </Button>
-      
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
-        </SheetTrigger>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Filter Books</SheetTitle>
-            <SheetDescription>
-              Select genres to narrow down your search
-            </SheetDescription>
-          </SheetHeader>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {genres.map(genre => (
-              <Button
-                key={genre}
-                variant={selectedGenres.includes(genre) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setSelectedGenres(prev =>
-                    prev.includes(genre)
-                      ? prev.filter(g => g !== genre)
-                      : [...prev, genre]
-                  )
-                }}
-                className="justify-start"
-              >
-                {genre}
-              </Button>
-            ))}
+      {/* Header */}
+      <div className="w-full max-w-4xl mx-auto mb-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Book Discovery</h1>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllHistory}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear History
+            </Button>
+            
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Filter Books</SheetTitle>
+                  <SheetDescription>
+                    Select genres to narrow down your search
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {genres.map(genre => (
+                    <Button
+                      key={genre}
+                      variant={selectedGenres.includes(genre) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedGenres(prev =>
+                          prev.includes(genre)
+                            ? prev.filter(g => g !== genre)
+                            : [...prev, genre]
+                        )
+                      }}
+                      className="justify-start"
+                    >
+                      {genre}
+                    </Button>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
-        </SheetContent>
-      </Sheet>
-    </div>
-  </div>
-</div>
+        </div>
+      </div>
 
       {/* Search Area */}
-      <div className="w-full max-w-2xl mx-auto mb-8">
+      <div className="w-full max-w-4xl mx-auto mb-8">
         <div className="relative">
           <form onSubmit={(e) => {
             e.preventDefault()
@@ -526,22 +462,30 @@ export default function Home() {
               {/* History Button */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" className="shrink-0">
                     <History size={20} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[200px]">
-                  {searchHistory.map((query, index) => (
-                    <DropdownMenuItem
-                      key={index}
-                      onClick={() => {
-                        setInput(query)
-                        setShowSuggestions(false)
-                      }}
-                    >
-                      {query}
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuContent align="end" className="w-[300px]">
+                  {searchHistory.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No search history yet
+                    </div>
+                  ) : (
+                    searchHistory.map((query, index) => (
+                      <DropdownMenuItem
+                        key={index}
+                        onClick={() => {
+                          setInput(query)
+                          setShowSuggestions(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Search className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{query}</span>
+                      </DropdownMenuItem>
+                    ))
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -551,6 +495,7 @@ export default function Home() {
                   <Button 
                     variant="outline" 
                     size="icon"
+                    className="shrink-0"
                     onClick={(e) => {
                       e.stopPropagation()
                     }}
@@ -572,7 +517,7 @@ export default function Home() {
               </DropdownMenu>
 
               {/* Search Button */}
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="shrink-0">
                 {isLoading ? (
                   <motion.div
                     animate={{ rotate: 360 }}
@@ -581,8 +526,8 @@ export default function Home() {
                     <Search size={20} />
                   </motion.div>
                 ) : (
-<Search size={20} />
-                  )}
+                  <Search size={20} />
+                )}
               </Button>
             </div>
           </form>
@@ -598,44 +543,59 @@ export default function Home() {
       {/* Messages Area */}
       {messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-          <BookOpen className="h-16 w-16 mb-4" />
-          <h2 className="text-xl font-medium mb-2">Start Your Book Discovery Journey</h2>
-          <p className="text-sm text-center max-w-md">
-            Describe the kind of book you're looking for - whether it's by plot, genre,
-            mood, or similar books you've enjoyed. Our AI will help you find your next great read.
-            You can also upload a text file with your description.
-          </p>
-          {selectedGenres.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              {selectedGenres.map(genre => (
-                <span key={genre} className="px-2 py-1 bg-primary/10 rounded-full text-xs">
-                  {genre}
-                </span>
-              ))}
-            </div>
-          )}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <BookOpen className="h-16 w-16 mx-auto mb-4" />
+            <h2 className="text-xl font-medium mb-2">Start Your Book Discovery Journey</h2>
+            <p className="text-sm max-w-md mx-auto">
+              Describe the kind of book you're looking for - whether it's by plot, genre,
+              mood, or similar books you've enjoyed. Our AI will help you find your next great read.
+            </p>
+            {selectedGenres.length > 0 && (
+              <motion.div 
+                className="mt-4 flex flex-wrap gap-2 justify-center"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                {selectedGenres.map(genre => (
+                  <span key={genre} className="px-2 py-1 bg-primary/10 rounded-full text-xs">
+                    {genre}
+                  </span>
+                ))}
+              </motion.div>
+            )}
+          </motion.div>
         </div>
       ) : (
-        <ScrollArea className="flex-1 mb-4 pr-4">
-          <AnimatePresence>
-            {messages.map(message => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className={`mb-4 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}
-              >
-                <div className={`inline-block p-3 rounded-lg ${
-                  message.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                }`}>
-                  <MessageContent message={message} />
-                </div>
-                {message.books && <BookList message={message} />}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        <ScrollArea className="flex-1 mb-4 px-4">
+          <div className="max-w-4xl mx-auto">
+            <AnimatePresence mode="wait">
+              {messages.map(message => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className={`mb-4 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}
+                >
+                  <div className={`inline-block max-w-[80%] p-4 rounded-lg ${
+                    message.sender === 'user' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-card text-card-foreground shadow-sm'
+                  }`}>
+                    <MessageContent message={message} />
+                  </div>
+                  {message.books && <BookList message={message} />}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
           <div ref={messagesEndRef} />
         </ScrollArea>
       )}
