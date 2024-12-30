@@ -117,11 +117,11 @@ export default function Home() {
   interface Book {
     id: number
     title: string
-    issued_date: string
+    issued: string  // Changed from issued
     authors: string[]
     subjects: string[]
     cover_url: string
-  }
+}
   
   interface Message {
     id: number
@@ -136,7 +136,7 @@ export default function Home() {
     {
       id: 1,
       title: "The Great Gatsby",
-      issued_date: "1925-04-10",
+      issued: "1925-04-10",
       authors: ["F. Scott Fitzgerald"],
       subjects: ["Fiction", "Classical Literature", "American Literature"],
       cover_url: "https://covers.openlibrary.org/b/id/12000-L.jpg"
@@ -144,7 +144,7 @@ export default function Home() {
     {
       id: 2,
       title: "1984",
-      issued_date: "1949-06-08",
+      issued: "1949-06-08",
       authors: ["George Orwell"],
       subjects: ["Science Fiction", "Dystopian", "Political Fiction"],
       cover_url: "https://covers.openlibrary.org/b/id/12001-L.jpg"
@@ -152,7 +152,7 @@ export default function Home() {
     {
       id: 3,
       title: "Pride and Prejudice",
-      issued_date: "1813-01-28",
+      issued: "1813-01-28",
       authors: ["Jane Austen"],
       subjects: ["Romance", "Classic Literature", "Social Commentary"],
       cover_url: "https://covers.openlibrary.org/b/id/12002-L.jpg"
@@ -160,7 +160,7 @@ export default function Home() {
     {
       id: 4,
       title: "The Hobbit",
-      issued_date: "1937-09-21",
+      issued: "1937-09-21",
       authors: ["J.R.R. Tolkien"],
       subjects: ["Fantasy", "Adventure", "Children's Literature"],
       cover_url: "https://covers.openlibrary.org/b/id/12003-L.jpg"
@@ -168,7 +168,7 @@ export default function Home() {
     {
       id: 5,
       title: "To Kill a Mockingbird",
-      issued_date: "1960-07-11",
+      issued: "1960-07-11",
       authors: ["Harper Lee"],
       subjects: ["Fiction", "Legal Story", "Southern Literature"],
       cover_url: "https://covers.openlibrary.org/b/id/12004-L.jpg"
@@ -176,7 +176,7 @@ export default function Home() {
     {
       id: 6,
       title: "The Catcher in the Rye",
-      issued_date: "1951-07-16",
+      issued: "1951-07-16",
       authors: ["J.D. Salinger"],
       subjects: ["Fiction", "Coming of Age", "Literary Fiction"],
       cover_url: "https://covers.openlibrary.org/b/id/12005-L.jpg"
@@ -184,7 +184,7 @@ export default function Home() {
     {
       id: 7,
       title: "Lord of the Rings",
-      issued_date: "1954-07-29",
+      issued: "1954-07-29",
       authors: ["J.R.R. Tolkien"],
       subjects: ["Fantasy", "Epic", "Adventure"],
       cover_url: "https://covers.openlibrary.org/b/id/12006-L.jpg"
@@ -192,7 +192,7 @@ export default function Home() {
     {
       id: 8,
       title: "Brave New World",
-      issued_date: "1932-01-01",
+      issued: "1932-01-01",
       authors: ["Aldous Huxley"],
       subjects: ["Science Fiction", "Dystopian", "Classics"],
       cover_url: "https://covers.openlibrary.org/b/id/12007-L.jpg"
@@ -222,19 +222,21 @@ export default function Home() {
         }),
       });
 
-      console.log(response)
       
-      if (!response.ok) {
+      if (!response.ok) { 
         throw new Error('Server response was not ok');
       }
   
-      const data: { books: Book[] } = await response.json();
+      const data: Book[] = await response.json();
+
+      console.log(data);
+      
       const botMessage: Message = {
         id: Date.now(),
         text: 'Here are some book recommendations based on your description:',
         sender: 'bot',
         timestamp: new Date(),
-        books: data.books
+        books: data
       };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -396,9 +398,9 @@ export default function Home() {
           className="object-cover rounded-t-lg"
           priority
         />
-        {book.issued_date && (
+        {book.issued && (
           <span className="absolute top-3 right-3 bg-white/90 text-black text-xs px-3 py-1 rounded-full shadow-sm">
-            {book.issued_date}
+            {book.issued}
           </span>
         )}
       </div>
@@ -408,18 +410,7 @@ export default function Home() {
           {book.title}
         </h3>
 
-        {book.subjects && (
-          <div className="flex flex-wrap gap-1.5">
-            {book.subjects.map((subject, i) => (
-              <span 
-                key={i} 
-                className="text-xs font-medium bg-secondary px-2.5 py-1 rounded-full"
-              >
-                {subject}
-              </span>
-            ))}
-          </div>
-        )}
+       
       </div>
     </motion.div>
   ))}
