@@ -170,7 +170,7 @@ export default function Home() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('http://105.102.16.36:5000/suggest', {
+      const response = await fetch('http://localhost:5000/suggest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
