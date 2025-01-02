@@ -170,7 +170,7 @@ export default function Home() {
     setIsLoading(true)
 
     console.log(process.env)
-    const URL = process.env.BACKEND_URL || "http://127.0.0.1:5000"
+    const URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
     try {
       const response = await fetch(`${URL}/suggest`, {
         method: 'POST',
