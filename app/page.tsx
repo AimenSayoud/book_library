@@ -169,9 +169,9 @@ export default function Home() {
     setInput('')
     setIsLoading(true)
 
-    const URL = process.env.BACKEND_URL || "127.0.0.1:5000"
+    const URL = process.env.BACKEND_URL || "http://127.0.0.1:5000"
     try {
-      const response = await fetch(`http://${URL}/suggest`, {
+      const response = await fetch(`${URL}/suggest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
