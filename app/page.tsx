@@ -28,6 +28,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+
+import {
   Card,
   CardContent,
 } from "@/components/ui/card"
@@ -170,9 +176,11 @@ export default function Home() {
     setIsLoading(true)
 
     console.log(process.env)
-    const URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000"
+  // Use the environment variable
+    const API_URL = process.env.NEXT_PUBLIC_API_URL
     try {
-      const response = await fetch(`${URL}/suggest`, {
+      console.log(API_URL)
+      const response = await fetch(`${API_URL}/suggest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -391,41 +399,45 @@ export default function Home() {
               Clear History
             </Button>
             
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Filter Books</SheetTitle>
-                  <SheetDescription>
-                    Select genres to narrow down your search
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  {genres.map(genre => (
-                    <Button
-                      key={genre}
-                      variant={selectedGenres.includes(genre) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => {
-                        setSelectedGenres(prev =>
-                          prev.includes(genre)
-                            ? prev.filter(g => g !== genre)
-                            : [...prev, genre]
-                        )
-                      }}
-                      className="justify-start"
-                    >
-                      {genre}
-                    </Button>
-                  ))}
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Popover>
+  <PopoverTrigger asChild>
+    <Button variant="outline" size="sm">
+      <Filter className="h-4 w-4 mr-2" />
+      Filters {selectedGenres.length > 0 && `(${selectedGenres.length})`}
+    </Button>
+  </PopoverTrigger>
+  <PopoverContent className="w-80">
+    <div className="space-y-4">
+      <div className="font-medium">Filter Books</div>
+      <p className="text-sm text-muted-foreground">
+        Select genres to narrow down your search
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {genres.map(genre => (
+          <Button
+            key={genre}
+            variant={selectedGenres.includes(genre) ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setSelectedGenres(prev =>
+                prev.includes(genre)
+                  ? prev.filter(g => g !== genre)
+                  : [...prev, genre]
+              )
+            }}
+            className="justify-start"
+          >
+            {genre}
+          </Button>
+        ))}
+      </div>
+    </div>
+  </PopoverContent>
+</Popover>
+
+
+
+
           </div>
         </div>
       </div>
