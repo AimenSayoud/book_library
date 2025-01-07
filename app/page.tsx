@@ -169,7 +169,7 @@ export default function Home() {
       text: text,
       sender: 'user',
       timestamp: new Date()
-    }
+    }//commit
     setMessages(prev => [...prev, userMessage])
     addToSearchHistory(text)
     setInput('')
