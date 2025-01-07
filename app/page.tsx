@@ -183,15 +183,11 @@ export default function Home() {
       const response = await fetch(`${API_URL}/suggest`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': '*',
-          'Access-Control-Allow-Methods': '*',
-          'Origin': 'https://book-library-sigma-khaki.vercel.app'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ Text: text }),
-        credentials: 'include' // or 'same-origin' if you don't need cookies
-
+        credentials: 'omit',
+        mode: 'cors'
       })
 
       if (!response.ok) {
