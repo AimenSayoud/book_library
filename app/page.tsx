@@ -186,9 +186,12 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': '*',
-          'Access-Control-Allow-Methods': '*'
+          'Access-Control-Allow-Methods': '*',
+          'Origin': 'https://book-library-sigma-khaki.vercel.app'
         },
         body: JSON.stringify({ Text: text }),
+        credentials: 'include' // or 'same-origin' if you don't need cookies
+
       })
 
       if (!response.ok) {
